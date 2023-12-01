@@ -1,0 +1,81 @@
+Assignment 3
+Deadline: 11:59PM Dec 6
+Partner Requirement
+You can work in a group of up to 3. Your partner can be from a different set.
+Requirements
+In this assignment, you are required to write a function that reads string inputs from a file. The
+name contains a first and last name. Your program adds, deletes, and searches a node from a binary
+search tree. It should be able to perform pre-order traversal of the tree and print it to the output.
+The pre-order is done in a way that the output is ascending order by the first name, then the last
+name.
+For add operation, there is no output (a node is added since we allow a duplicate. More to come
+later). For search operation, if a name is found “Found” is the output. If not found, “Not Found”
+is written to the output. One design requirement is that there can be duplicates, so make sure to
+handle this.
+The delete operation is different from conventional delete operations. If a data is found in the tree,
+then the node is deleted. If the data is not found, then the node is added. For example, a user is
+trying to delete “Steve Roger” and it is not currently in tree, then “Steve Roger” node will be added.
+Operations are specified after the name by an integer:
+1: add operation
+2: delete operation
+3: search operation
+4: perform the traversal
+Option 4 does not need any input, so it will just traverses the tree and print the names in the correct
+order.
+Below is a sample run of the program.
+>> cat input.txt
+John Kim 1
+John Kim 3
+4
+Chris Patel 1
+John Kim 2
+Chris Patel 1
+Chris Patel 3
+4
+Chris Patel 2
+Chris Patel 3
+Chris Batel 1
+4
+Lisa Hampton 3
+>> ./<executable> input.txt output.txt
+>> cat output.txt
+Found
+John Kim
+Found
+Chris Patel
+Chris Patel
+Found
+Chris Batel
+Chris Patel
+Not Found
+
+Below are the specifications of the lab.
+1. The run command will be
+>> ./<executable> input.txt output.txt
+2. There can be duplicates.
+3. Values in the input file are not sorted.
+4. There will be corner case testing in this assignment.
+5. Guaranteed to have no empty lines, no integer outside integer range and no data other than
+int type in the input file
+6. First and last names will be guaranteed to be present. Both names are case-sensitive and
+must be used in the ordering using ASCII value. For example, Roger comes before roger
+since R is 82 and r is 114.
+7. In any case an error is detected, print any message that contains “Error” and exit the
+program.
+8. Do not add any random trailing new lines or spaces. I will allow up to one new line
+character at the end of an output file. Example below:
+>> cat output.txt
+Found
+Found <- having a new line character here is please
+>>
+Below examples will be incorrect
+>> cat output.txt
+Found
+Found >> <- no new line character
+Or
+>> cat output.txt
+Found
+Found
+Found
+<- extra new line
+>>

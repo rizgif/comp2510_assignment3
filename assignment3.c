@@ -5,159 +5,167 @@
 typedef struct Node {
     char firstName[50];
     char lastName[50];
-    struct Node *left, *right;
+    struct Node* left;
+    struct Node* right;
 } Node;
 
-Node* createNode(char *firstName, char *lastName) {
-    Node *newNode = (Node*) malloc(sizeof(Node));
+Node* createNode(char* firstName, char* lastName) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
     strcpy(newNode->firstName, firstName);
     strcpy(newNode->lastName, lastName);
     newNode->left = newNode->right = NULL;
     return newNode;
 }
-
-int compareNames(char *firstName1, char *lastName1, char *firstName2, char *lastName2) {
-    int firstCompare = strcmp(firstName1, firstName2);
-    if (firstCompare == 0) {
-        return strcmp(lastName1, lastName2);
+Node* addNode(Node* root, char* firstName, char* lastName) {
+    if (root == NULL) {
+        return createNode(firstName, lastName);
     }
-    return firstCompare;
-}
 
-Node* insertNode(Node *root, char *firstName, char *lastName) {
-    if (root == NULL) return createNode(firstName, lastName);
+    int cmp = strcmp(firstName, root->firstName);
+    if (cmp == 0) {
+        cmp = strcmp(lastName, root->lastName);
+        if (cmp == 0) {
+            // Duplicate node, do not add it
+            return root;
+        }
+    }
 
-    if (compareNames(firstName, lastName, root->firstName, root->lastName) < 0) {
-        root->left = insertNode(root->left, firstName, lastName);
+    if (cmp < 0) {
+        root->left = addNode(root->left, firstName, lastName);
     } else {
-        root->right = insertNode(root->right, firstName, lastName);
+        root->right = addNode(root->right, firstName, lastName);
     }
 
     return root;
 }
 
-Node* findMinNode(Node *node) {
-    Node *current = node;
+
+Node* minValueNode(Node* node) {
+    Node* current = node;
     while (current && current->left != NULL) {
         current = current->left;
     }
     return current;
 }
+Node* deleteNode(Node* root, char* firstName, char* lastName, FILE* output) {
+    if (root == NULL) {
+        fprintf(output, "Not Found\n");
+        return root; // Return root without adding a node
+    }
 
-Node* deleteNode(Node *root, char *firstName, char *lastName, int *found) {
-    if (root == NULL) return root;
+    int cmp = strcmp(firstName, root->firstName);
+    if (cmp == 0) {
+        cmp = strcmp(lastName, root->lastName);
+    }
 
-    int comp = compareNames(firstName, lastName, root->firstName, root->lastName);
-    if (comp < 0) {
-        root->left = deleteNode(root->left, firstName, lastName, found);
-    } else if (comp > 0) {
-        root->right = deleteNode(root->right, firstName, lastName, found);
+    if (cmp < 0) {
+        root->left = deleteNode(root->left, firstName, lastName, output);
+    } else if (cmp > 0) {
+        root->right = deleteNode(root->right, firstName, lastName, output);
     } else {
-        *found = 1;
-
+        fprintf(output, "Found\n");
+        // Node with only one child or no child
         if (root->left == NULL) {
-            Node *temp = root->right;
+            Node* temp = root->right;
             free(root);
             return temp;
         } else if (root->right == NULL) {
-            Node *temp = root->left;
+            Node* temp = root->left;
             free(root);
             return temp;
         }
 
-        Node *temp = findMinNode(root->right);
+        // Node with two children: Get the inorder successor
+        Node* temp = minValueNode(root->right);
+
+        // Copy the inorder successor's content to this node
         strcpy(root->firstName, temp->firstName);
         strcpy(root->lastName, temp->lastName);
-        root->right = deleteNode(root->right, temp->firstName, temp->lastName, found);
+
+        // Delete the inorder successor
+        root->right = deleteNode(root->right, temp->firstName, temp->lastName, output);
     }
 
     return root;
 }
 
-int searchNode(Node *root, char *firstName, char *lastName) {
-    if (root == NULL) return 0;
 
-    int comp = compareNames(firstName, lastName, root->firstName, root->lastName);
-    if (comp == 0) {
-        return 1;
-    } else if (comp < 0) {
-        return searchNode(root->left, firstName, lastName);
+int searchNode(Node* root, char* firstName, char* lastName, FILE* output) {
+    if (root == NULL) {
+        fprintf(output, "Not Found\n");
+        return 0;
+    }
+
+    int cmp = strcmp(firstName, root->firstName);
+    if (cmp == 0) {
+        cmp = strcmp(lastName, root->lastName);
+    }
+
+    if (cmp < 0) {
+        return searchNode(root->left, firstName, lastName, output);
+    } else if (cmp > 0) {
+        return searchNode(root->right, firstName, lastName, output);
     } else {
-        return searchNode(root->right, firstName, lastName);
+        fprintf(output, "Found\n");
+        return 1;
     }
 }
 
-void preOrderTraversal(Node *root, FILE *output) {
-    if (root == NULL) return;
-
-    fprintf(output, "%s %s\n", root->firstName, root->lastName);
-    preOrderTraversal(root->left, output);
-    preOrderTraversal(root->right, output);
+void preOrderTraversal(Node* root, FILE* output) {
+    if (root != NULL) {
+        fprintf(output, "%s %s\n", root->firstName, root->lastName);
+        preOrderTraversal(root->left, output);
+        preOrderTraversal(root->right, output);
+    }
 }
 
-void freeTree(Node *root) {
-    if (root == NULL) return;
-
-    freeTree(root->left);
-    freeTree(root->right);
-    free(root);
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        printf("Usage: %s <inputfile> <outputfile>\n", argv[0]);
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        printf("Error: Invalid number of arguments\n");
         return 1;
     }
 
-    char *inputFile = argv[1];
-    char *outputFile = argv[2];
-
-    FILE *input = fopen(inputFile, "r");
-    FILE *output = fopen(outputFile, "w");
-
-    if (!input || !output) {
-        perror("Error opening file");
+    FILE* inputFile = fopen(argv[1], "r");
+    if (inputFile == NULL) {
+        printf("Error: Unable to open input file\n");
         return 1;
     }
 
-    Node *root = NULL;
-    char firstName[50], lastName[50];
+    FILE* outputFile = fopen(argv[2], "w");
+    if (outputFile == NULL) {
+        printf("Error: Unable to open output file\n");
+        return 1;
+    }
+
+    Node* root = NULL;
+    char firstName[50];
+    char lastName[50];
     int operation;
 
-    while (fscanf(input, "%s %s %d", firstName, lastName, &operation) != EOF) {
-        int found = 0;
+    while (fscanf(inputFile, "%s %s %d", firstName, lastName, &operation) != EOF) {
         switch (operation) {
-            case 1: // Add operation
-                root = insertNode(root, firstName, lastName);
+            case 1:
+                root = addNode(root, firstName, lastName);
                 break;
-            case 2: // Delete operation
-                root = deleteNode(root, firstName, lastName, &found);
-                if (!found) {
-                    root = insertNode(root, firstName, lastName);
-                }
+            case 2:
+                root = deleteNode(root, firstName, lastName, outputFile);
                 break;
-            case 3: // Search operation
-                if (searchNode(root, firstName, lastName)) {
-                    fprintf(output, "Found\n");
-                } else {
-                    fprintf(output, "Not Found\n");
-                }
+            case 3:
+                searchNode(root, firstName, lastName, outputFile);
                 break;
-            case 4: // Pre-order traversal
-                preOrderTraversal(root, output);
+            case 4:
+                preOrderTraversal(root, outputFile);
+                fprintf(outputFile, "\n");
                 break;
             default:
-                fprintf(output, "Error\n");
-                fclose(input);
-                fclose(output);
-                freeTree(root);
+                printf("Error: Invalid operation\n");
                 return 1;
         }
     }
 
-    fclose(input);
-    fclose(output);
-    freeTree(root);
+
+    fclose(inputFile);
+    fclose(outputFile);
 
     return 0;
 }
